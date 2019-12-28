@@ -1,0 +1,237 @@
+/////////////////Server 
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#define PORTNUM 9007
+
+int main(void){
+    char buf[256];
+    struct sockaddr_in sin, cli;
+    int sd, ns, clientlen = sizeof(cli);
+
+    if((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1){
+        perror("socket");
+        exit(1);
+    }
+   
+    memset((char*)&sin, '\0', sizeof(sin));
+    sin.sin_family = AF_INET;
+    sin.sin_port = htons(PORTNUM);
+    sin.sin_addr.s_addr = inet_addr("127.0.0.1");
+
+    if(bind(sd, (struct sockaddr*)&sin, sizeof(sin))){
+        perror("bind");
+        exit(1);
+    }
+   
+    if(listen(sd, 5)){
+        perror("listen");
+        exit(1);
+    }
+    while(1){
+        if((ns = accept(sd, (struct sockaddr*)&cli, &clientlen)) == -1){
+            perror("accept");
+            exit(1);
+        }
+       
+        switch(fork()){
+            case 0:
+            close(sd);
+            sprintf(buf, "%d", ns);
+            execlp("./bit", "bit", buf,(char*)0);   
+           
+        }
+       
+    close(ns);
+    }
+    return 0;
+}
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+//////////////Client
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#define PORTNUM 9007
+
+int main(void){
+    char buf[256];
+    struct sockaddr_in sin;
+    int sd;
+    int len,num,num1;
+    if((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1){
+        perror("socket");
+        exit(1);
+    }
+
+    memset((char*)&sin, '\0', sizeof(sin));
+    sin.sin_family = AF_INET;
+    sin.sin_port = htons(PORTNUM);
+    sin.sin_addr.s_addr = inet_addr("127.0.0.1");
+
+    if(connect(sd,(struct sockaddr*)&sin, sizeof(sin))){
+        perror("connect");
+        exit(1);
+    }
+    while(1){
+        if((len = recv(sd, buf, sizeof(buf),0)) == -1){
+            perror("recv");
+            exit(1);
+        }
+        printf("==> From Server : %s\n", buf);
+        scanf("%d", &num);
+   
+        if(num == 0){
+            exit(1);
+            break;
+        }
+        else if(num == 1){
+            sprintf(buf, "%d", num);
+            write(sd, buf, strlen(buf)+1);
+            read(sd, buf, sizeof(buf));
+            printf("%s \n", buf);
+            int num1;
+            scanf("%d", &num1);
+            if(num1 !=0){
+                sprintf(buf, "%d", num1);
+                write(sd, buf, strlen(buf)+1);
+
+            }
+
+            sleep(1);   
+        }
+        else if(num == 2){
+            sprintf(buf, "%d", num);
+            write(sd, buf, strlen(buf)+1);
+
+            read(sd, buf, sizeof(buf));
+            printf("%s \n", buf);
+            int num2;
+            scanf("%d", &num2);
+            if(num2 !=0){
+                sprintf(buf, "%d", num2);
+                write(sd, buf, strlen(buf)+1);
+
+            }
+            sleep(1);   
+        }
+    }
+
+    close(sd);
+   
+    return 0;
+}
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+/////////////////////Bit
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+
+int main(int argc, char*argv[]){
+    int len;
+    char buf[256];
+    int ns;
+    char* chr = "send 1 for sum of odd numbers between 1 and n, send 2 for sum of even numbers between 1 and n, send 0 for exit";
+    while(1){
+        ns = atoi(argv[1]);
+        sprintf(buf, "%s", chr);
+        if((send(ns, buf, strlen(buf)+1, 0)) ==-1){
+            perror("send");
+            exit(1);
+        }
+   
+        sleep(1);       
+        read(ns, buf, sizeof(buf));
+        int num = atoi(buf);
+        if(num ==1){
+            sprintf(buf,"What is the number? \n");
+            if((send(ns, buf, strlen(buf)+1, 0))==-1){
+                perror("send");
+                exit(1);
+            }
+            sleep(1);
+       
+            read(ns, buf, sizeof(buf));
+            int num1 = atoi(buf);
+            int sum1 =0;
+            for(int i=1; i<=num1; i+=2){
+                sum1 +=i;
+            }
+            sprintf(buf, "The sum of odd number between %d and %d is %d", num, num1, sum1);
+            if((send(ns, buf, strlen(buf)+1, 0))==-1){
+                perror("send");
+                exit(1);
+            }
+           
+        }
+        if(num ==2){
+            sprintf(buf,"What is the number? \n");
+            if((send(ns, buf, strlen(buf)+1, 0))==-1){
+                perror("send");
+                exit(1);
+            }
+            sleep(1);
+           
+            read(ns, buf, sizeof(buf));
+            int num1 = atoi(buf);
+            int sum1 =0;
+            for(int i=0; i<=num1; i+=2){
+                sum1 +=i;
+            }
+            sprintf(buf, "The sum of even numbers between %d and %d is %d", num, num1, sum1);
+            if((send(ns, buf, strlen(buf)+1, 0))==-1){
+                perror("send");
+                exit(1);
+            }       
+        }
+    }
+    close(ns);
+    return 0;
+} 
